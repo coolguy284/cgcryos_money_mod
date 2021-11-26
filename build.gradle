@@ -12,7 +12,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
 
-version = 'a0.0.0'
+version = 'a0.1.0'
 group = 'com.coolguy284.cgcryos_money_mod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'cgcryos_money_mod'
 
@@ -145,7 +145,7 @@ jar {
         attributes([
             "Specification-Title": "CgCryo's Money Mod",
             "Specification-Vendor": "cgcryo",
-            "Specification-Version": "a1.0.0", // We are version 1 of ourselves
+            "Specification-Version": project.jar.archiveVersion, // We are version 1 of ourselves
             "Implementation-Title": project.name,
             "Implementation-Version": project.jar.archiveVersion,
             "Implementation-Vendor" :"cgcryo",

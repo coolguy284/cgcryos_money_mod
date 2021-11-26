@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "cgcryos_money_mod:items/coin_1_dollar"
+  }
+}
