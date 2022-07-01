@@ -19,7 +19,7 @@ license="MIT"
 
 
 # A URL to refer people to when problems occur with this mod
-#issueTrackerURL="https://github.com/coolguy284/cgcryos_money_mod/issues" #optional
+issueTrackerURL="https://github.com/coolguy284/cgcryos_money_mod/issues" #optional
 
 
 # A list of mods - how many allowed here is determined by the individual mod loader
@@ -62,7 +62,9 @@ authors="coolguy284, CryoPyroGentics" #optional
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Minecraft money mod that adds cash, atms, buy and sell orders, and more! Currently in beta and only Forge 1.16.5.
+Minecraft money mod that adds cash, atms, buy and sell orders, and more! Currently in beta and only for Forge 1.16.5.
+
+At the current moment, support for cash and coin items has been added, and support for bank account commands is partially implemented.
 '''
 
 

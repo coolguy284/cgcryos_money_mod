@@ -1,9 +1,16 @@
 package com.coolguy284.cgcryos_money_mod;
 
+import com.coolguy284.cgcryos_money_mod.common.CCMMBankCommand;
+import com.coolguy284.cgcryos_money_mod.common.CCMMDebugCommand;
 import com.coolguy284.cgcryos_money_mod.common.CCMMItem;
-import com.coolguy284.cgcryos_money_mod.common.CCMMItemGroup;
+import com.coolguy284.cgcryos_money_mod.client.CCMMItemGroup;
 import com.coolguy284.cgcryos_money_mod.common.RegistrationHandler;
+import net.minecraft.command.impl.DebugCommand;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -12,6 +19,7 @@ import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.server.command.ConfigCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 public class CgCryosMoneyMod
 {
     // Directly reference a log4j logger.
-    private static final Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger();
     public static final String MODID = "cgcryos_money_mod";
 
     public static final CCMMItemGroup CCMMGroup = new CCMMItemGroup(() -> (CCMMItem.itemBill1Dollar)) {};
@@ -84,4 +92,22 @@ public class CgCryosMoneyMod
         }
     }
     */
+
+    @Mod.EventBusSubscriber(modid = MODID)
+    public static class ModEventHandler {
+        @SubscribeEvent
+        public static void onCommandsRegister(RegisterCommandsEvent event) {
+            new CCMMDebugCommand(event.getDispatcher());
+            new CCMMBankCommand(event.getDispatcher());
+
+            DebugCommand.register(event.getDispatcher());
+        }
+
+        @SubscribeEvent
+        public static void onPlayerCloneEvent(PlayerEvent.Clone event) {
+            if (!event.getEntity().getCommandSenderWorld().isClientSide()) {
+                event.getPlayer().getPersistentData();
+            }
+        }
+    }
 }

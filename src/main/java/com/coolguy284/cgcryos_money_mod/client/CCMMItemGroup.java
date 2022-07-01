@@ -1,6 +1,7 @@
-package com.coolguy284.cgcryos_money_mod.common;
+package com.coolguy284.cgcryos_money_mod.client;
 
 import com.coolguy284.cgcryos_money_mod.CgCryosMoneyMod;
+import com.coolguy284.cgcryos_money_mod.common.CCMMItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;

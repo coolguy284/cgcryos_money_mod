@@ -5,7 +5,7 @@ import net.minecraft.item.Item;
 
 public class ItemMoney extends Item {
     public String REGISTRY_NAME;
-    public boolean isBill = true;
+    public boolean isBill;
     public long tenthCentAmount;
 
     public ItemMoney(boolean isBill, long tenthCentAmount) {
@@ -14,6 +14,7 @@ public class ItemMoney extends Item {
                 .durability(0)
                 .stacksTo(64));
 
+        this.isBill = isBill;
         this.tenthCentAmount = tenthCentAmount;
 
         String prefix = isBill ? "bill_" : "coin_";
