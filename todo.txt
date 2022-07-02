@@ -1,3 +1,8 @@
+move oprequirement onto zop subcategory as a whole
+make command objects static
 add way to set default account to none
-make transfer commands send chat message to receiving player
-finish ccmm bank zop commands, make zop into subcategory
+make transfer commands send chat message to receiving player, zop to sending player as well (maybe as a config option defaulting to true)
+add command that lists total money of each player and total on server as a whole
+
+potential:
+better wording for negative numbers in commands

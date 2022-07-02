@@ -64,7 +64,7 @@ authors="coolguy284, CryoPyroGentics" #optional
 description='''
 Minecraft money mod that adds cash, atms, buy and sell orders, and more! Currently in beta and only for Forge 1.16.5.
 
-At the current moment, support for cash items, coin items, and bank account commands have been added (except for operator commands).
+At the current moment, support for cash items, coin items, and bank account commands have been added.
 '''
 
 
