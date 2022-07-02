@@ -1,0 +1,3 @@
+add way to set default account to none
+make transfer commands send chat message to receiving player
+finish ccmm bank zop commands, make zop into subcategory

@@ -11,7 +11,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class CCMMItemGroup extends ItemGroup {
-    private IItemProvider icon;
+    private final IItemProvider icon;
 
     public CCMMItemGroup(IItemProvider icon) {
         super(CgCryosMoneyMod.MODID);
