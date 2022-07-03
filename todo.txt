@@ -1,7 +1,9 @@
-expected behavior check on all bank commands
+make commands parse money string as input instead of long
 move oprequirement onto zop subcategory as a whole
 make command objects static
 add way to set default account to none
+automatically unset default account if remove command (zop version also) is run on default account
+
 add command that lists total money of each player and total on server as a whole
 config option for whether zop commands send chat messages to affected players
 make zop commands not send 2 messages when called by the player on themselves

@@ -70,7 +70,7 @@ public class CCMMBankCommand {
         } else {
             for (String key : keys) {
                 returnString.append("\n");
-                returnString.append(key).append(": ").append(new TranslationTextComponent("commands.ccmm.list.success.entry", formatAmount(bankAccounts.getLong(key))));
+                returnString.append(new TranslationTextComponent("commands.ccmm.list.success.entry", key, formatAmount(bankAccounts.getLong(key))));
             }
         }
 
@@ -200,7 +200,7 @@ public class CCMMBankCommand {
         CompoundNBT bankAccounts = player.getPersistentData().getCompound(bankAccountLocation);
 
         if (!bankAccounts.contains(accountFrom)) {
-            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent("commands.ccmm.transfer.external.failure_no_from.with_player", accountFrom, playerTo.getName(), formatAmount(amount)));
+            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent("commands.ccmm.transfer.external.failure_no_from", accountFrom, playerTo.getName(), formatAmount(amount)));
         }
 
         if (playerTo.getUUID().equals(player.getUUID())) {
@@ -266,7 +266,8 @@ public class CCMMBankCommand {
 
         player.getPersistentData().put(bankAccountSettingsLocation, bankSettings);
 
-        player.sendMessage(new TranslationTextComponent("commands.ccmm.default.success_set_admin", newDefault), player.getUUID());
+        if (opMode)
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.default.success_set_admin", newDefault), player.getUUID());
 
         return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_set", opMode, player, newDefault));
     }
@@ -311,17 +312,17 @@ public class CCMMBankCommand {
         CompoundNBT bankAccounts = player.getPersistentData().getCompound(bankAccountLocation);
 
         if (!bankAccounts.contains(accountFrom)) {
-            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent("commands.ccmm.zop.transfer.external.failure_no_from", accountFrom, playerTo.getName(), formatAmount(amount)));
+            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent("commands.ccmm.zop.transfer.external.failure_no_from", player.getName(), accountFrom, playerTo.getName(), formatAmount(amount)));
         }
 
         if (playerTo.getUUID().equals(player.getUUID())) {
-            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent("commands.ccmm.zop.transfer.external.failure_same_player", accountFrom, playerTo.getName(), formatAmount(amount)));
+            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent("commands.ccmm.zop.transfer.external.failure_same_player", player.getName(), accountFrom, playerTo.getName(), formatAmount(amount)));
         }
 
         CompoundNBT playerToSettings = playerTo.getPersistentData().getCompound(bankAccountSettingsLocation);
 
         if (!playerToSettings.contains("default_account")) {
-            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent("commands.ccmm.zop.transfer.external.failure_player_to_no_default", accountFrom, playerTo.getName(), formatAmount(amount)));
+            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent("commands.ccmm.zop.transfer.external.failure_player_to_no_default", player.getName(), accountFrom, playerTo.getName(), formatAmount(amount)));
         }
 
         CompoundNBT playerToBankAccounts = playerTo.getPersistentData().getCompound(bankAccountLocation);
@@ -329,7 +330,7 @@ public class CCMMBankCommand {
         String accountTo = accountToOverride != null ? accountToOverride : playerToSettings.getString("default_account");
 
         if (!playerToBankAccounts.contains(accountTo)) {
-            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent(accountToOverride != null ? "commands.ccmm.zop.transfer.external.failure_player_to_invalid_provided_default" : "commands.ccmm.zop.transfer.external.failure_player_to_invalid_default", accountFrom, playerTo.getName(), formatAmount(amount), accountTo));
+            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, new TranslationTextComponent(accountToOverride != null ? "commands.ccmm.zop.transfer.external.failure_player_to_invalid_provided_account" : "commands.ccmm.zop.transfer.external.failure_player_to_invalid_default", player.getName(), accountFrom, playerTo.getName(), formatAmount(amount), accountTo));
         }
 
         long accountFromValue = bankAccounts.getLong(accountFrom);
@@ -346,7 +347,7 @@ public class CCMMBankCommand {
         player.sendMessage(new TranslationTextComponent("commands.ccmm.transfer.external.success_admin", accountFrom, playerTo.getName(), formatAmount(amount), formatAmount(accountFromValueAfter)), player.getUUID());
         playerTo.sendMessage(new TranslationTextComponent("commands.ccmm.transfer.external.success_to", formatAmount(amount), player.getName(), accountTo, formatAmount(accountToValueAfter)), player.getUUID());
 
-        return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.transfer.external.success", accountFrom, player.getName(), formatAmount(amount), playerTo.getName(), formatAmount(accountFromValueAfter), accountTo));
+        return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.transfer.external.success", player.getName(), accountFrom, formatAmount(amount), playerTo.getName(), formatAmount(accountFromValueAfter), accountTo));
     }
 
     // this command is op only
@@ -454,7 +455,12 @@ public class CCMMBankCommand {
 
         GameProfile playerToProfile = playerTos.iterator().next();
 
-        ServerPlayerEntity playerTo = Objects.requireNonNull(commandContext.getSource().getServer().getPlayerList().getPlayer(playerToProfile.getId()));
+        ServerPlayerEntity playerTo = commandContext.getSource().getServer().getPlayerList().getPlayer(playerToProfile.getId());
+
+        if (playerTo == null) {
+            commandContext.getSource().sendFailure(new TranslationTextComponent("commands.ccmm.transfer.external.failure_invalid_player_to", accountFrom, formatAmount(amount)));
+            return 1;
+        }
 
         CCMMCommandResult result = CCMMBankTransferExternalAccountInternal(player, accountFrom, amount, playerTo);
 
@@ -559,7 +565,12 @@ public class CCMMBankCommand {
 
         GameProfile playerToProfile = playerTos.iterator().next();
 
-        ServerPlayerEntity playerTo = Objects.requireNonNull(commandContext.getSource().getServer().getPlayerList().getPlayer(playerToProfile.getId()));
+        ServerPlayerEntity playerTo = commandContext.getSource().getServer().getPlayerList().getPlayer(playerToProfile.getId());
+
+        if (playerTo == null) {
+            commandContext.getSource().sendFailure(new TranslationTextComponent("commands.ccmm.zop.transfer.external.failure_invalid_player_to", player.getName(), accountFrom, formatAmount(amount)));
+            return 1;
+        }
 
         String accountTo;
         try {
