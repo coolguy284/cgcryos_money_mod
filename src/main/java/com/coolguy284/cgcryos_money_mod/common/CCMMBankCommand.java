@@ -354,28 +354,44 @@ public class CCMMBankCommand {
     public CCMMCommandResult CCMMBankAddToOtherAccountInternal(ServerPlayerEntity player, String accountName, long amount) {
         CompoundNBT bankAccounts = player.getPersistentData().getCompound(bankAccountLocation);
 
-        long newAmount = bankAccounts.getLong(accountName) + amount;
+        boolean accountExistedBefore = bankAccounts.contains(accountName);
+
+        long newAmount = accountExistedBefore ? bankAccounts.getLong(accountName) + amount : amount;
 
         bankAccounts.putLong(accountName, newAmount);
 
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
 
-        player.sendMessage(new TranslationTextComponent("commands.ccmm.zop.add.success_to", accountName, formatAmount(amount), formatAmount(newAmount)), player.getUUID());
+        if (accountExistedBefore) {
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.zop.add.success_existed_admin", accountName, formatAmount(amount), formatAmount(newAmount)), player.getUUID());
 
-        return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.add.success", player.getName(), accountName, formatAmount(amount), formatAmount(newAmount)));
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.add.success_existed", player.getName(), accountName, formatAmount(amount), formatAmount(newAmount)));
+        } else {
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.zop.add.success_created_admin", accountName, formatAmount(amount)), player.getUUID());
+
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.add.success_created", player.getName(), accountName, formatAmount(amount)));
+        }
     }
 
     // this command is op only
     public CCMMCommandResult CCMMBankSetAccountInternal(ServerPlayerEntity player, String accountName, long amount) {
         CompoundNBT bankAccounts = player.getPersistentData().getCompound(bankAccountLocation);
 
+        boolean accountExistedBefore = bankAccounts.contains(accountName);
+
         bankAccounts.putLong(accountName, amount);
 
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
 
-        player.sendMessage(new TranslationTextComponent("commands.ccmm.zop.set.success_to", accountName, formatAmount(amount)), player.getUUID());
+        if (accountExistedBefore) {
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.zop.set.success_existed_admin", accountName, formatAmount(amount)), player.getUUID());
 
-        return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.set.success", player.getName(), accountName, formatAmount(amount)));
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.set.success_existed", player.getName(), accountName, formatAmount(amount)));
+        } else {
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.zop.set.success_created_admin", accountName, formatAmount(amount)), player.getUUID());
+
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.set.success_created", player.getName(), accountName, formatAmount(amount)));
+        }
     }
 
     public int CCMMBankListAccounts(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
