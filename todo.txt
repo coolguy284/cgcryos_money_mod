@@ -1,4 +1,3 @@
-make commands parse money string as input instead of long
 move oprequirement onto zop subcategory as a whole
 make command objects static
 add way to set default account to none

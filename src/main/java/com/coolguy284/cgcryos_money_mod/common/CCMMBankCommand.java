@@ -3,7 +3,6 @@ package com.coolguy284.cgcryos_money_mod.common;
 import com.coolguy284.cgcryos_money_mod.CgCryosMoneyMod;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -37,8 +36,8 @@ public class CCMMBankCommand {
                         .then(Commands.literal("create").then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankCreateAccount)))
                         .then(Commands.literal("remove").then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankRemoveAccount).then(Commands.argument("transfer_account_name", StringArgumentType.string()).executes(this::CCMMBankRemoveAccount))))
                         .then(Commands.literal("transfer")
-                                .then(Commands.literal("internal").then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("account_to", StringArgumentType.string()).then(Commands.argument("amount", LongArgumentType.longArg()).executes(this::CCMMBankTransferInternalAccount)))))
-                                .then(Commands.literal("external").then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("player_to", GameProfileArgument.gameProfile()).then(Commands.argument("amount", LongArgumentType.longArg()).executes(this::CCMMBankTransferExternalAccount)))))
+                                .then(Commands.literal("internal").then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("account_to", StringArgumentType.string()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankTransferInternalAccount)))))
+                                .then(Commands.literal("external").then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("player_to", GameProfileArgument.gameProfile()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankTransferExternalAccount)))))
                         )
                         .then(Commands.literal("default").executes(this::CCMMBankDefaultAccount).then(Commands.argument("new_default_account", StringArgumentType.string()).executes(this::CCMMBankDefaultAccount)))
                         .then(Commands.literal("zop")
@@ -47,11 +46,11 @@ public class CCMMBankCommand {
                                 .then(Commands.literal("create").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankCreateOtherAccount))))
                                 .then(Commands.literal("remove").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankRemoveOtherAccount).then(Commands.argument("transfer_account", StringArgumentType.string()).executes(this::CCMMBankRemoveOtherAccount)))))
                                 .then(Commands.literal("transfer").requires(Libs::OPRequirement)
-                                        .then(Commands.literal("internal").then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("account_to", StringArgumentType.string()).then(Commands.argument("amount", LongArgumentType.longArg()).executes(this::CCMMBankTransferInternalOtherAccount))))))
-                                        .then(Commands.literal("external").then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("player_to", GameProfileArgument.gameProfile()).then(Commands.argument("amount", LongArgumentType.longArg()).executes(this::CCMMBankTransferExternalOtherAccount).then(Commands.argument("account_to", StringArgumentType.string()).executes(this::CCMMBankTransferExternalOtherAccount)))))))
+                                        .then(Commands.literal("internal").then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("account_to", StringArgumentType.string()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankTransferInternalOtherAccount))))))
+                                        .then(Commands.literal("external").then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("player_to", GameProfileArgument.gameProfile()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankTransferExternalOtherAccount).then(Commands.argument("account_to", StringArgumentType.string()).executes(this::CCMMBankTransferExternalOtherAccount)))))))
                                 )
-                                .then(Commands.literal("add").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).then(Commands.argument("amount", LongArgumentType.longArg()).executes(this::CCMMBankAddToOtherAccount)))))
-                                .then(Commands.literal("set").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).then(Commands.argument("amount", LongArgumentType.longArg()).executes(this::CCMMBankSetOtherAccount)))))
+                                .then(Commands.literal("add").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankAddToOtherAccount)))))
+                                .then(Commands.literal("set").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankSetOtherAccount)))))
                                 .then(Commands.literal("default").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).executes(this::CCMMBankDefaultOtherAccount).then(Commands.argument("new_default_account", StringArgumentType.string()).executes(this::CCMMBankDefaultOtherAccount))))
                         )
                 )
@@ -444,7 +443,7 @@ public class CCMMBankCommand {
 
         String accountFrom = StringArgumentType.getString(commandContext, "account_from");
         String accountTo = StringArgumentType.getString(commandContext, "account_to");
-        long amount = LongArgumentType.getLong(commandContext, "amount");
+        long amount = MoneyArgumentType.getMoney(commandContext, "amount");
 
         CCMMCommandResult result = CCMMBankTransferInternalAccountInternal(player, accountFrom, accountTo, amount);
 
@@ -455,7 +454,7 @@ public class CCMMBankCommand {
         ServerPlayerEntity player = CCMMGetPlayer(commandContext);
 
         String accountFrom = StringArgumentType.getString(commandContext, "account_from");
-        long amount = LongArgumentType.getLong(commandContext, "amount");
+        long amount = MoneyArgumentType.getMoney(commandContext, "amount");
 
         Collection<GameProfile> playerTos = GameProfileArgument.getGameProfiles(commandContext, "player_to");
 
@@ -553,7 +552,7 @@ public class CCMMBankCommand {
 
         String accountFrom = StringArgumentType.getString(commandContext, "account_from");
         String accountTo = StringArgumentType.getString(commandContext, "account_to");
-        long amount = LongArgumentType.getLong(commandContext, "amount");
+        long amount = MoneyArgumentType.getMoney(commandContext, "amount");
 
         CCMMCommandResult result = CCMMBankTransferInternalOtherAccountInternal(player, accountFrom, accountTo, amount);
 
@@ -565,7 +564,7 @@ public class CCMMBankCommand {
         if (player == null) return 1;
 
         String accountFrom = StringArgumentType.getString(commandContext, "account_from");
-        long amount = LongArgumentType.getLong(commandContext, "amount");
+        long amount = MoneyArgumentType.getMoney(commandContext, "amount");
 
         Collection<GameProfile> playerTos = GameProfileArgument.getGameProfiles(commandContext, "player_to");
 
@@ -605,7 +604,7 @@ public class CCMMBankCommand {
         if (player == null) return 1;
 
         String accountName = StringArgumentType.getString(commandContext, "account");
-        long amount = LongArgumentType.getLong(commandContext, "amount");
+        long amount = MoneyArgumentType.getMoney(commandContext, "amount");
 
         CCMMCommandResult result = CCMMBankAddToOtherAccountInternal(player, accountName, amount);
 
@@ -617,7 +616,7 @@ public class CCMMBankCommand {
         if (player == null) return 1;
 
         String accountName = StringArgumentType.getString(commandContext, "account");
-        long amount = LongArgumentType.getLong(commandContext, "amount");
+        long amount = MoneyArgumentType.getMoney(commandContext, "amount");
 
         CCMMCommandResult result = CCMMBankSetAccountInternal(player, accountName, amount);
 

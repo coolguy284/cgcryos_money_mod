@@ -30,6 +30,8 @@
   "item.cgcryos_money_mod.bill_200000_dollar": "200,000 Dollar Bill",
   "item.cgcryos_money_mod.bill_500000_dollar": "500,000 Dollar Bill",
   "item.cgcryos_money_mod.bill_1000000_dollar": "1,000,000 Dollar Bill",
+  "commands.ccmm.money_arg.invalid_money_type": "Invalid Money Value",
+  "commands.ccmm.money_arg.invalid_money": "Amount is not a valid money string",
   "commands.ccmm.format_amount.negative_symbol": "-",
   "commands.ccmm.format_amount.decimal_separator": ".",
   "commands.ccmm.format_amount.10^3_separator": ",",
