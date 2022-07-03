@@ -11,6 +11,7 @@ import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.logging.log4j.core.jmx.Server;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -85,7 +86,12 @@ public class Libs {
 
         GameProfile playerProfile = players.iterator().next();
 
-        return Objects.requireNonNull(commandContext.getSource().getServer().getPlayerList().getPlayer(playerProfile.getId()));
+        ServerPlayerEntity player = commandContext.getSource().getServer().getPlayerList().getPlayer(playerProfile.getId());
+
+        if (player == null)
+            commandContext.getSource().sendFailure(new TranslationTextComponent("argument.entity.notfound.player"));
+
+        return player;
     }
 
     public static int CCMMSendCommandResult(CCMMCommandResult result, CommandContext<CommandSource> commandContext) {

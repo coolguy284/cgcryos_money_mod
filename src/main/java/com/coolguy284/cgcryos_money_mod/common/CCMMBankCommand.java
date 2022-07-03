@@ -45,7 +45,7 @@ public class CCMMBankCommand {
                                 .then(Commands.literal("list").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).executes(this::CCMMBankListOtherAccounts)))
                                 .then(Commands.literal("get").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankGetOtherAccount))))
                                 .then(Commands.literal("create").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankCreateOtherAccount))))
-                                .then(Commands.literal("remove").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankRemoveOtherAccount).then(Commands.argument("transfer_account", StringArgumentType.string())))))
+                                .then(Commands.literal("remove").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankRemoveOtherAccount).then(Commands.argument("transfer_account", StringArgumentType.string()).executes(this::CCMMBankRemoveOtherAccount)))))
                                 .then(Commands.literal("transfer").requires(Libs::OPRequirement)
                                         .then(Commands.literal("internal").then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("account_to", StringArgumentType.string()).then(Commands.argument("amount", LongArgumentType.longArg()).executes(this::CCMMBankTransferInternalOtherAccount))))))
                                         .then(Commands.literal("external").then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("player_to", GameProfileArgument.gameProfile()).then(Commands.argument("amount", LongArgumentType.longArg()).executes(this::CCMMBankTransferExternalOtherAccount).then(Commands.argument("account_to", StringArgumentType.string()).executes(this::CCMMBankTransferExternalOtherAccount)))))))
@@ -100,6 +100,9 @@ public class CCMMBankCommand {
 
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
 
+        if (opMode)
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.create.success_admin", accountName), player.getUUID());
+
         return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("create.success", opMode, player, accountName));
     }
 
@@ -112,28 +115,48 @@ public class CCMMBankCommand {
 
         long accountValue = bankAccounts.getLong(accountName);
 
-        if (accountValue != 0 && transferAccount != null) {
-            if (!bankAccounts.contains(transferAccount)) {
-                return new CCMMCommandResult(CCMMCommandResultStatus.Failure, CCMMTranslationTextOptionalOp("remove.failure_transfer_no_exist", opMode, player, accountName, transferAccount));
+        if (accountValue != 0) {
+            boolean performTransfer = true;
+            System.out.println(transferAccount);
+            if (transferAccount == null) {
+                if (!opMode)
+                    return new CCMMCommandResult(CCMMCommandResultStatus.Failure, CCMMTranslationTextOptionalOp("remove.failure_has_money", false, player, accountName));
+                else
+                    performTransfer = false;
             }
 
-            bankAccounts.putLong(transferAccount, bankAccounts.getLong(transferAccount) + accountValue);
+            if (performTransfer) {
+                if (!bankAccounts.contains(transferAccount)) {
+                    return new CCMMCommandResult(CCMMCommandResultStatus.Failure, CCMMTranslationTextOptionalOp("remove.failure_transfer_no_exist", opMode, player, accountName, transferAccount));
+                }
 
-            bankAccounts.remove(accountName);
+                bankAccounts.putLong(transferAccount, bankAccounts.getLong(transferAccount) + accountValue);
 
-            player.getPersistentData().put(bankAccountLocation, bankAccounts);
+                bankAccounts.remove(accountName);
 
-            return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("remove.success_transfer", opMode, player, accountName, transferAccount, formatAmount(accountValue)));
+                player.getPersistentData().put(bankAccountLocation, bankAccounts);
+
+                if (opMode)
+                    player.sendMessage(new TranslationTextComponent("commands.ccmm.remove.success_transfer_admin", accountName, transferAccount, formatAmount(accountValue)), player.getUUID());
+
+                return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("remove.success_transfer", opMode, player, accountName, transferAccount, formatAmount(accountValue)));
+            }
         }
 
         bankAccounts.remove(accountName);
 
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
 
-        if (accountValue != 0)
-            return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("remove.success_no_transfer_with_value", opMode, player, accountName, formatAmount(accountValue)));
-        else
+        if (accountValue != 0) {
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.remove.success_no_transfer_with_value_admin", accountName, formatAmount(accountValue)), player.getUUID());
+
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("remove.success_no_transfer_with_value", true, player, accountName, formatAmount(accountValue)));
+        } else {
+            if (opMode)
+                player.sendMessage(new TranslationTextComponent("commands.ccmm.remove.success_no_transfer_admin", accountName), player.getUUID());
+
             return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("remove.success_no_transfer", opMode, player, accountName));
+        }
     }
 
     public CCMMCommandResult CCMMBankTransferInternalAccountInternal(ServerPlayerEntity player, String accountFrom, String accountTo, long amount) {
@@ -167,11 +190,10 @@ public class CCMMBankCommand {
 
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
 
-        if (accountToExistedBefore) {
+        if (accountToExistedBefore)
             return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.transfer.internal.success_account_to_existed", accountFrom, accountTo, formatAmount(amount), formatAmount(accountFromValueAfter)));
-        } else {
+        else
             return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.transfer.internal.success_account_to_created", accountFrom, accountTo, formatAmount(amount), formatAmount(accountFromValueAfter)));
-        }
     }
 
     public CCMMCommandResult CCMMBankTransferExternalAccountInternal(ServerPlayerEntity player, String accountFrom, long amount, ServerPlayerEntity playerTo) {
@@ -218,6 +240,8 @@ public class CCMMBankCommand {
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
         playerTo.getPersistentData().put(bankAccountLocation, playerToBankAccounts);
 
+        playerTo.sendMessage(new TranslationTextComponent("commands.ccmm.transfer.external.success_to", formatAmount(amount), player.getName(), accountTo, formatAmount(accountToValueAfter)), player.getUUID());
+
         return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.transfer.external.success", accountFrom, playerTo.getName(), formatAmount(amount), formatAmount(accountFromValueAfter)));
     }
 
@@ -241,6 +265,8 @@ public class CCMMBankCommand {
         bankSettings.putString("default_account", newDefault);
 
         player.getPersistentData().put(bankAccountSettingsLocation, bankSettings);
+
+        player.sendMessage(new TranslationTextComponent("commands.ccmm.default.success_set_admin", newDefault), player.getUUID());
 
         return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_set", opMode, player, newDefault));
     }
@@ -270,8 +296,12 @@ public class CCMMBankCommand {
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
 
         if (accountToExistedBefore) {
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.transfer.internal.success_account_to_existed_admin", accountFrom, accountTo, formatAmount(amount), formatAmount(accountFromValueAfter)), player.getUUID());
+
             return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.transfer.internal.success_account_to_existed", accountFrom, accountTo, formatAmount(amount), formatAmount(accountFromValueAfter)));
         } else {
+            player.sendMessage(new TranslationTextComponent("commands.ccmm.transfer.internal.success_account_to_created_admin", accountFrom, accountTo, formatAmount(amount), formatAmount(accountFromValueAfter)), player.getUUID());
+
             return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.transfer.internal.success_account_to_created", accountFrom, accountTo, formatAmount(amount), formatAmount(accountFromValueAfter)));
         }
     }
@@ -313,7 +343,10 @@ public class CCMMBankCommand {
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
         playerTo.getPersistentData().put(bankAccountLocation, playerToBankAccounts);
 
-        return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.transfer.external.success", accountFrom, playerTo.getName(), formatAmount(amount), formatAmount(accountFromValueAfter), accountTo));
+        player.sendMessage(new TranslationTextComponent("commands.ccmm.transfer.external.success_admin", accountFrom, playerTo.getName(), formatAmount(amount), formatAmount(accountFromValueAfter)), player.getUUID());
+        playerTo.sendMessage(new TranslationTextComponent("commands.ccmm.transfer.external.success_to", formatAmount(amount), player.getName(), accountTo, formatAmount(accountToValueAfter)), player.getUUID());
+
+        return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.transfer.external.success", accountFrom, player.getName(), formatAmount(amount), playerTo.getName(), formatAmount(accountFromValueAfter), accountTo));
     }
 
     // this command is op only
@@ -326,6 +359,8 @@ public class CCMMBankCommand {
 
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
 
+        player.sendMessage(new TranslationTextComponent("commands.ccmm.zop.add.success_to", accountName, formatAmount(amount), formatAmount(newAmount)), player.getUUID());
+
         return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.add.success", player.getName(), accountName, formatAmount(amount), formatAmount(newAmount)));
     }
 
@@ -336,6 +371,8 @@ public class CCMMBankCommand {
         bankAccounts.putLong(accountName, amount);
 
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
+
+        player.sendMessage(new TranslationTextComponent("commands.ccmm.zop.set.success_to", accountName, formatAmount(amount)), player.getUUID());
 
         return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.zop.set.success", player.getName(), accountName, formatAmount(amount)));
     }
@@ -478,7 +515,7 @@ public class CCMMBankCommand {
 
         String transferAccount;
         try {
-            transferAccount = StringArgumentType.getString(commandContext, "transfer_account_name");
+            transferAccount = StringArgumentType.getString(commandContext, "transfer_account");
         } catch (IllegalArgumentException e) {
             transferAccount = null;
         }
