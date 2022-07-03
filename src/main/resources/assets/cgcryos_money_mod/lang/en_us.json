@@ -76,6 +76,8 @@
   "commands.ccmm.default.success_get.no_default": "Default account is not set",
   "commands.ccmm.default.success_set": "Default account set to \"%1$s\"",
   "commands.ccmm.default.success_set_admin": "An admin has set your default account to \"%1$s\"",
+  "commands.ccmm.default.success_set_none": "Default account unset",
+  "commands.ccmm.default.success_set_none_admin": "An admin has unset your default account",
   "commands.ccmm.zop.failure_no_player": "No players were specified",
   "commands.ccmm.zop.failure_many_player": "Many players were specified",
   "commands.ccmm.zop.list.success.top": "%1$s's Bank Accounts:",
@@ -112,5 +114,6 @@
   "commands.ccmm.zop.default.failure_no_account": "Could not set %1$s's account \"%2$s\" as default as it does not exist",
   "commands.ccmm.zop.default.success_get.has_default": "%1$s's default account is \"%2$s\"",
   "commands.ccmm.zop.default.success_get.no_default": "%1$s's default account is not set",
-  "commands.ccmm.zop.default.success_set": "%1$s's default account set to \"%2$s\""
+  "commands.ccmm.zop.default.success_set": "%1$s's default account set to \"%2$s\"",
+  "commands.ccmm.zop.default.success_set_none": "%1$s's default account unset"
 }

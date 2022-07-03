@@ -39,7 +39,10 @@ public class CCMMBankCommand {
                                 .then(Commands.literal("internal").then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("account_to", StringArgumentType.string()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankTransferInternalAccount)))))
                                 .then(Commands.literal("external").then(Commands.argument("account_from", StringArgumentType.string()).then(Commands.argument("player_to", GameProfileArgument.gameProfile()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankTransferExternalAccount)))))
                         )
-                        .then(Commands.literal("default").executes(this::CCMMBankDefaultAccount).then(Commands.argument("new_default_account", StringArgumentType.string()).executes(this::CCMMBankDefaultAccount)))
+                        .then(Commands.literal("default")
+                                .then(Commands.literal("get").executes(this::CCMMBankDefaultGetAccount))
+                                .then(Commands.literal("set").executes(this::CCMMBankDefaultSetAccount).then(Commands.argument("new_default", StringArgumentType.string()).executes(this::CCMMBankDefaultSetAccount)))
+                        )
                         .then(Commands.literal("zop")
                                 .then(Commands.literal("list").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).executes(this::CCMMBankListOtherAccounts)))
                                 .then(Commands.literal("get").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).executes(this::CCMMBankGetOtherAccount))))
@@ -51,7 +54,10 @@ public class CCMMBankCommand {
                                 )
                                 .then(Commands.literal("add").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankAddToOtherAccount)))))
                                 .then(Commands.literal("set").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).then(Commands.argument("account", StringArgumentType.string()).then(Commands.argument("amount", MoneyArgumentType.moneyArg()).executes(this::CCMMBankSetOtherAccount)))))
-                                .then(Commands.literal("default").requires(Libs::OPRequirement).then(Commands.argument("player", GameProfileArgument.gameProfile()).executes(this::CCMMBankDefaultOtherAccount).then(Commands.argument("new_default_account", StringArgumentType.string()).executes(this::CCMMBankDefaultOtherAccount))))
+                                .then(Commands.literal("default").requires(Libs::OPRequirement)
+                                        .then(Commands.literal("get").then(Commands.argument("player", GameProfileArgument.gameProfile()).executes(this::CCMMBankDefaultGetOtherAccount)))
+                                        .then(Commands.literal("set").then(Commands.argument("player", GameProfileArgument.gameProfile()).executes(this::CCMMBankDefaultSetOtherAccount).then(Commands.argument("new_default", StringArgumentType.string()).executes(this::CCMMBankDefaultSetOtherAccount))))
+                                )
                         )
                 )
         );
@@ -244,31 +250,44 @@ public class CCMMBankCommand {
         return new CCMMCommandResult(CCMMCommandResultStatus.Success, new TranslationTextComponent("commands.ccmm.transfer.external.success", accountFrom, playerTo.getName(), formatAmount(amount), formatAmount(accountFromValueAfter)));
     }
 
-    public CCMMCommandResult CCMMBankDefaultAccountInternal(ServerPlayerEntity player, String newDefault, boolean opMode) {
+    public CCMMCommandResult CCMMBankDefaultGetAccountInternal(ServerPlayerEntity player, boolean opMode) {
         CompoundNBT bankSettings = player.getPersistentData().getCompound(bankAccountSettingsLocation);
 
-        if (newDefault == null) {
-            if (bankSettings.contains("default_account")) {
-                return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_get.has_default", opMode, player, bankSettings.getString("default_account")));
-            } else {
-                return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_get.no_default", opMode, player));
-            }
+        if (bankSettings.contains("default_account")) {
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_get.has_default", opMode, player, bankSettings.getString("default_account")));
+        } else {
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_get.no_default", opMode, player));
         }
+    }
+
+    public CCMMCommandResult CCMMBankDefaultSetAccountInternal(ServerPlayerEntity player, String newDefault, boolean opMode) {
+        CompoundNBT bankSettings = player.getPersistentData().getCompound(bankAccountSettingsLocation);
 
         CompoundNBT bankAccounts = player.getPersistentData().getCompound(bankAccountLocation);
 
-        if (!bankAccounts.contains(newDefault)) {
-            return new CCMMCommandResult(CCMMCommandResultStatus.Failure, CCMMTranslationTextOptionalOp("default.failure_no_account", opMode, player, newDefault));
+        if (newDefault != null) {
+            if (!bankAccounts.contains(newDefault)) {
+                return new CCMMCommandResult(CCMMCommandResultStatus.Failure, CCMMTranslationTextOptionalOp("default.failure_no_account", opMode, player, newDefault));
+            }
+
+            bankSettings.putString("default_account", newDefault);
+
+            player.getPersistentData().put(bankAccountSettingsLocation, bankSettings);
+
+            if (opMode)
+                player.sendMessage(new TranslationTextComponent("commands.ccmm.default.success_set_admin", newDefault), player.getUUID());
+
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_set", opMode, player, newDefault));
+        } else {
+            bankSettings.remove("default_account");
+
+            player.getPersistentData().put(bankAccountSettingsLocation, bankSettings);
+
+            if (opMode)
+                player.sendMessage(new TranslationTextComponent("commands.ccmm.default.success_set_none_admin"), player.getUUID());
+
+            return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_set_none", opMode, player));
         }
-
-        bankSettings.putString("default_account", newDefault);
-
-        player.getPersistentData().put(bankAccountSettingsLocation, bankSettings);
-
-        if (opMode)
-            player.sendMessage(new TranslationTextComponent("commands.ccmm.default.success_set_admin", newDefault), player.getUUID());
-
-        return new CCMMCommandResult(CCMMCommandResultStatus.Success, CCMMTranslationTextOptionalOp("default.success_set", opMode, player, newDefault));
     }
 
     // this command is op only
@@ -482,17 +501,25 @@ public class CCMMBankCommand {
         return CCMMSendCommandResult(result, commandContext);
     }
 
-    public int CCMMBankDefaultAccount(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
+    public int CCMMBankDefaultGetAccount(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
+        ServerPlayerEntity player = CCMMGetPlayer(commandContext);
+
+        CCMMCommandResult result = CCMMBankDefaultGetAccountInternal(player, false);
+
+        return CCMMSendCommandResult(result, commandContext);
+    }
+
+    public int CCMMBankDefaultSetAccount(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
         ServerPlayerEntity player = CCMMGetPlayer(commandContext);
 
         String newDefault;
         try {
-            newDefault = StringArgumentType.getString(commandContext, "new_default_account");
+            newDefault = StringArgumentType.getString(commandContext, "new_default");
         } catch (IllegalArgumentException e) {
             newDefault = null;
         }
 
-        CCMMCommandResult result = CCMMBankDefaultAccountInternal(player, newDefault, false);
+        CCMMCommandResult result = CCMMBankDefaultSetAccountInternal(player, newDefault, false);
 
         return CCMMSendCommandResult(result, commandContext);
     }
@@ -623,18 +650,27 @@ public class CCMMBankCommand {
         return CCMMSendCommandResult(result, commandContext);
     }
 
-    public int CCMMBankDefaultOtherAccount(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
+    public int CCMMBankDefaultGetOtherAccount(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
+        ServerPlayerEntity player = CCMMGetPlayerArg(commandContext);
+        if (player == null) return 1;
+
+        CCMMCommandResult result = CCMMBankDefaultGetAccountInternal(player, true);
+
+        return CCMMSendCommandResult(result, commandContext);
+    }
+
+    public int CCMMBankDefaultSetOtherAccount(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
         ServerPlayerEntity player = CCMMGetPlayerArg(commandContext);
         if (player == null) return 1;
 
         String newDefault;
         try {
-            newDefault = StringArgumentType.getString(commandContext, "new_default_account");
+            newDefault = StringArgumentType.getString(commandContext, "new_default");
         } catch (IllegalArgumentException e) {
             newDefault = null;
         }
 
-        CCMMCommandResult result = CCMMBankDefaultAccountInternal(player, newDefault, true);
+        CCMMCommandResult result = CCMMBankDefaultSetAccountInternal(player, newDefault, true);
 
         return CCMMSendCommandResult(result, commandContext);
     }
