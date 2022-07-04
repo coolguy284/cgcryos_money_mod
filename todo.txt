@@ -1,6 +1,3 @@
-move oprequirement onto zop subcategory as a whole
-make command objects static
-
 add command that lists total money of each player and total on server as a whole
 config option for whether zop commands send chat messages to affected players
 make zop commands not send 2 messages when called by the player on themselves
