@@ -63,6 +63,22 @@ public class CCMMBankCommand {
         );
     }
 
+    public void CCMMCheckRemovedDefault(ServerPlayerEntity player, String accountName) {
+        CompoundNBT bankSettings = player.getPersistentData().getCompound(bankAccountSettingsLocation);
+
+        boolean hasDefaultAccount = bankSettings.contains("default_account");
+
+        if (!hasDefaultAccount) return;
+
+        String defaultAccount = bankSettings.getString("default_account");
+
+        if (defaultAccount.equals(accountName)) {
+            bankSettings.remove("default_account");
+
+            player.getPersistentData().put(bankAccountSettingsLocation, bankSettings);
+        }
+    }
+
     public CCMMCommandResult CCMMBankListAccountsInternal(ServerPlayerEntity player, boolean opMode) {
         CompoundNBT bankAccounts = player.getPersistentData().getCompound(bankAccountLocation);
 
@@ -141,6 +157,8 @@ public class CCMMBankCommand {
 
                 player.getPersistentData().put(bankAccountLocation, bankAccounts);
 
+                CCMMCheckRemovedDefault(player, accountName);
+
                 if (opMode)
                     player.sendMessage(new TranslationTextComponent("commands.ccmm.remove.success_transfer_admin", accountName, transferAccount, formatAmount(accountValue)), player.getUUID());
 
@@ -151,6 +169,8 @@ public class CCMMBankCommand {
         bankAccounts.remove(accountName);
 
         player.getPersistentData().put(bankAccountLocation, bankAccounts);
+
+        CCMMCheckRemovedDefault(player, accountName);
 
         if (accountValue != 0) {
             player.sendMessage(new TranslationTextComponent("commands.ccmm.remove.success_no_transfer_with_value_admin", accountName, formatAmount(accountValue)), player.getUUID());

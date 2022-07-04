@@ -1,6 +1,5 @@
 move oprequirement onto zop subcategory as a whole
 make command objects static
-automatically unset default account if remove command (zop version also) is run on default account
 
 add command that lists total money of each player and total on server as a whole
 config option for whether zop commands send chat messages to affected players
